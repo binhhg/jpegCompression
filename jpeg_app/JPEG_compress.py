@@ -44,7 +44,7 @@ class JPEG:
         else:
             self.widthNew = (int(self.widthOrigin/self.NUM_SIZE_BLOCK) + 1)*self.NUM_SIZE_BLOCK
 
-    def enCodeAChannel(self, ChannelColor, isYChannel):
+    def enCodeAChannel(self, ChannelColor, isYChannel, dpcm):
         #init
         newImage = np.zeros((self.heightNew, self.widthNew), np.float32)
         newImage[:self.heightOrigin, :self.widthOrigin] = ChannelColor
@@ -72,12 +72,14 @@ class JPEG:
 
                 DC_coefficient = divice[0, 0]
                 lenDC = len(DC)
-                if (lenDC == 0):
-                    DC.append(DC_coefficient)
-                else:
-                    DC.append(DC_coefficient - DC_behind_coefficient )
+                if(dpcm):
+                    if (lenDC == 0):
+                        DC.append(DC_coefficient)
+                    else:
+                        DC.append(DC_coefficient - DC_behind_coefficient )
 
-                DC_behind_coefficient = DC_coefficient
+                    DC_behind_coefficient = DC_coefficient
+                else: DC.append(DC_coefficient)
 
                 AC += zigzag.ZigZag().getArrayZigZag(divice)
         AC_RLE = RLE.encodeRunLengthEncoding(AC)
@@ -86,7 +88,7 @@ class JPEG:
         lenAC = len(AC_RLE)
         return [lenDC, lenAC] + DC + AC_RLE
 
-    def encodeJPEG(self, imageFile, quality=1):
+    def encodeJPEG(self, imageFile, quality=1, dpcm=None):
         now = time.time()
         self.initEncode(imageFile)
         filename, fileExtension = os.path.splitext(imageFile)
@@ -103,9 +105,9 @@ class JPEG:
         result = []
         for i in range(3): #Blue, green, red
             if i!=0:
-                result.append(self.enCodeAChannel(channels[i],False))
+                result.append(self.enCodeAChannel(channels[i],False,dpcm))
             else :
-                result.append(self.enCodeAChannel(channels[i],True))
+                result.append(self.enCodeAChannel(channels[i],True,dpcm))
         
         quantizationList = []
         for i in self.chrominaceTable:
@@ -158,7 +160,7 @@ class JPEG:
 
         self.Channel_decode = [blueNew, greenNew, redNew]
 
-    def decodeChannel(self, channel_decode, isYChannel):
+    def decodeChannel(self, channel_decode, isYChannel, dpcm):
         lenDC = channel_decode[0]
 
         DC = channel_decode[2 : 2 + lenDC]
@@ -178,12 +180,15 @@ class JPEG:
                 #-------------------
                 currentBlock = zigzag.ZigZag().getUnCovertZigZag(AC[i:i + 63])
                 i += 63
-                if (flag == 0):
-                    currentBlock[0,0] = DC[flag]
-                    DC_coefficient_current = DC[flag]
-                else:
-                    DC_coefficient_current = DC_coefficient_current + DC[flag]
-                    currentBlock[0,0] = DC_coefficient_current
+                if dpcm:
+                    if (flag == 0):
+                        currentBlock[0,0] = DC[flag]
+                        DC_coefficient_current = DC[flag]
+                    else:
+                        DC_coefficient_current = DC_coefficient_current + DC[flag]
+                        currentBlock[0,0] = DC_coefficient_current
+                    
+                else: currentBlock[0,0] = DC[flag]
                 flag += 1
                 #-------------------
                 currentBlock = currentBlock*quantizationTable_decode
@@ -193,7 +198,7 @@ class JPEG:
                 
         return newImage
 
-    def decode(self, outputPath, fileToSave):
+    def decode(self, outputPath, fileToSave, dpcm=None):
         now = time.time()
         arrEncode = huffman.decompress(outputPath)
 
@@ -202,9 +207,9 @@ class JPEG:
         decode = []
         for i in range(3):
             if i!=0:
-                decode.append(self.decodeChannel(self.Channel_decode[i], False)[:self.heightOrigin_decode,:self.widthOrigin_decode])
+                decode.append(self.decodeChannel(self.Channel_decode[i], False, dpcm)[:self.heightOrigin_decode,:self.widthOrigin_decode])
             else:
-                decode.append(self.decodeChannel(self.Channel_decode[i], True)[:self.heightOrigin_decode,:self.widthOrigin_decode])
+                decode.append(self.decodeChannel(self.Channel_decode[i], True, dpcm)[:self.heightOrigin_decode,:self.widthOrigin_decode])
 
         imgFinal = self.ycbcr2rgb(cv2.merge([decode[0], decode[1], decode[2]]))
         cv2.imwrite(fileToSave, imgFinal)
