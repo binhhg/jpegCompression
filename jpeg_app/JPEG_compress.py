@@ -75,7 +75,7 @@ class JPEG:
                 if (lenDC == 0):
                     DC.append(DC_coefficient)
                 else:
-                    DC.append(DC_behind_coefficient - DC_coefficient)
+                    DC.append(DC_coefficient - DC_behind_coefficient )
 
                 DC_behind_coefficient = DC_coefficient
 
@@ -182,7 +182,7 @@ class JPEG:
                     currentBlock[0,0] = DC[flag]
                     DC_coefficient_current = DC[flag]
                 else:
-                    DC_coefficient_current = DC_coefficient_current - DC[flag]
+                    DC_coefficient_current = DC_coefficient_current + DC[flag]
                     currentBlock[0,0] = DC_coefficient_current
                 flag += 1
                 #-------------------
