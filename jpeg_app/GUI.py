@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 import os
+from jpeg_app import logStatus
 from . import JPEG_compress
 
 
@@ -19,7 +20,7 @@ class GUI:
 
     def setWindow(self):
         self.root.title("Jpeg compress")
-        width, height = 500, 360  # 500, 530
+        width, height = 550, 360  # 500, 530
         self.root.geometry("%dx%d" % (width, height))
 
         # Display infor, title
@@ -54,6 +55,10 @@ class GUI:
                                command=lambda: self.actionDecompress(".jpg"))
         btnDeLossy.place(x=self.xForEntry + 210, y=150)
 
+        #Endcode and decode 1 step
+        btnProcess = tk.Button(self.root,  text = "Full Process", width = 10, height = 2, bg = self.buttonColor, fg = "#FFFFFF", command=lambda:self.actionProcess(".jpg"))
+        btnProcess.place(x = self.xForEntry+315, y = 150)
+
         tk.Label(self.root, text="Quality", font=(self.font, 12, "bold"), fg=self.textColor).place(x=self.xForLabel,
                                                                                                    y=215)
 
@@ -65,8 +70,8 @@ class GUI:
     def DirFileDialog(self, dirEntry):
         self.fileName = filedialog.askopenfilename(initialdir="/", title="Select Picture",
                                                    filetypes=(("All Files", "*.*"),
-                                                              ("Bitmap Image File", "*.BMP")
-                                                              , ("JPEG", "*.JPEG;*.JPG;*.JPE"),
+                                                              ("JPEG", "*.JPEG;*.JPG;*.JPE"),
+                                                              ("Bitmap Image File", "*.BMP"),
                                                               ("PNG", "*.PNG"),
                                                               ("BIN", "*.BIN"),
                                                               ("Numpy array Python", "*.npy")))
@@ -92,6 +97,21 @@ class GUI:
         self.log.after(0, self.log.destroy)
         self.log = tk.Label(self.root, text=log, font=(self.font, 12), fg=self.textColor)
         self.log.place(x=100, y=250)
+    
+    def actionProcess(self, typeFile):        
+        inputPath = self.fileName
+        compressedPath, log = JPEG_compress.JPEG().encodeJPEG(self.fileName, int(self.quality))
+
+        self.fileName = compressedPath
+        filename, fileExtension = os.path.splitext(self.fileName)
+        outputPath = filename + "_decode" + typeFile
+
+        JPEG_compress.JPEG().decode(self.fileName, outputPath)
+
+        log = logStatus.showMetric(inputPath, compressedPath, outputPath)
+        self.log.after(0,self.log.destroy)
+        self.log = tk.Label(self.root, text = log, font = (self.font, 12), fg = self.textColor)
+        self.log.place(x = 120, y = 250)
 
 
 if __name__ == "__main__":
