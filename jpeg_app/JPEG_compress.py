@@ -88,7 +88,7 @@ class JPEG:
         lenAC = len(AC_RLE)
         return [lenDC, lenAC] + DC + AC_RLE
 
-    def encodeJPEG(self, imageFile, quality=1, dpcm=None):
+    def encodeJPEG(self, imageFile, quality=0, dpcm=None):
         now = time.time()
         self.initEncode(imageFile)
         filename, fileExtension = os.path.splitext(imageFile)

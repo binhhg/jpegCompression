@@ -107,7 +107,7 @@ class GUI:
     def actionCompress(self):
         # try:
         # print(self.DPCM)
-        outputPath, log = JPEG_compress.JPEG().encodeJPEG(self.fileName, 1, self.DPCM)
+        outputPath, log = JPEG_compress.JPEG().encodeJPEG(self.fileName, 0, self.DPCM)
         self.log.after(0, self.log.destroy)
         self.log = tk.Label(self.root, text=log, font=(self.font, 12), fg=self.textColor)
         self.log.place(x=120, y=250)
@@ -123,7 +123,7 @@ class GUI:
     
     def actionProcess(self, typeFile):        
         inputPath = self.fileName
-        compressedPath, log = JPEG_compress.JPEG().encodeJPEG(self.fileName, 1, self.DPCM)
+        compressedPath, log = JPEG_compress.JPEG().encodeJPEG(self.fileName, 0, self.DPCM)
 
         # self.fileName = compressedPath
         filename, fileExtension = os.path.splitext(compressedPath)
